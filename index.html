@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rwandan Museum Puzzle</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#07150d;color:#e8f5ec;display:flex;justify-content:center}
+.wrap{max-width:900px;width:100%;padding:20px}.top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.panel{background:#0f2418;padding:12px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.35);border:1px solid #1d4d32}
+#board{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;aspect-ratio:1/1;background:#000;padding:4px;border-radius:12px;border:2px solid #1d4d32;margin-top:15px}
+.tile,.empty{border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;cursor:pointer;user-select:none}
+.tile{background-size:300% 300%;color:#fff;text-shadow:0 1px 2px #000;border:1px solid #1d4d32}.empty{background:#102017;cursor:default;border:1px dashed #2f7a50}
+button{padding:10px 14px;border:none;border-radius:8px;background:#145a32;color:#fff;cursor:pointer}button:hover{opacity:.95;background:#1f7a45}
+#levels{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}.lvl{padding:8px;border-radius:8px;background:#111;color:#bbb;text-align:center;border:1px solid #1d4d32}.open{background:#145a32;color:#fff;cursor:pointer}
+#msg{margin-top:12px;font-weight:bold;color:#7CFC98}
+@media(max-width:700px){#levels{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body><div class='wrap'>
+<h1 style='color:#7CFC98'>Rwandan Museum Slider Puzzle</h1>
+<div class='top'>
+<div class='panel'>Level: <span id='levelNum'>1</span> | Score: <span id='score'>0</span></div>
+<div class='panel'><button onclick='resetGame()'>Try Again</button></div>
+</div>
+<div class='panel'><strong id='figure'></strong><div id='board'></div><div id='msg'></div></div>
+<h3 style='color:#7CFC98'>Levels</h3><div id='levels'></div>
+</div>
+<script>
+const figures=[
+{name:'Kigeli IV Rwabugiri',img:'https://upload.wikimedia.org/wikipedia/commons/5/56/Kigeli_IV_Rwabugiri.jpg',fact:'Expanded Rwanda greatly.'},
+{name:'Mutara III Rudahigwa',img:'https://upload.wikimedia.org/wikipedia/commons/8/8f/Mutara_III.jpg',fact:'Supported modernization.'},
+{name:'Kigeli V Ndahindurwa',img:'https://upload.wikimedia.org/wikipedia/commons/0/02/Kigeli_V.jpg',fact:'Last king of Rwanda.'},
+{name:'Yuhi V Musinga',img:'https://upload.wikimedia.org/wikipedia/commons/1/1c/Yuhi_V.jpg',fact:'Ruled during colonial era.'},
+{name:'Ruganzu Ndori',img:'https://picsum.photos/seed/1/600',fact:'Known in oral history.'},
+{name:'Cyilima Rugwe',img:'https://picsum.photos/seed/2/600',fact:'Remembered as early king.'},
+{name:'Kigeri II',img:'https://picsum.photos/seed/3/600',fact:'Important dynastic ruler.'},
+{name:'Mibambwe III',img:'https://picsum.photos/seed/4/600',fact:'Historic monarch.'},
+{name:'Mutara II',img:'https://picsum.photos/seed/5/600',fact:'Led precolonial Rwanda.'},
+{name:'Gihanga',img:'https://picsum.photos/seed/6/600',fact:'Legendary founder figure.'}
+];
+let level=+localStorage.getItem('level')||1; let unlocked=+localStorage.getItem('unlocked')||1; let score=+localStorage.getItem('score')||0; let board=[]; let won=false;
+function solved(){return [1,2,3,4,5,6,7,8,0]}
+function shuffle(){board=solved().slice(); for(let i=0;i<200;i++){let e=board.indexOf(0);let moves=neighbors(e); let m=moves[Math.floor(Math.random()*moves.length)]; [board[e],board[m]]=[board[m],board[e]];} if(isSolved()) shuffle();}
+function neighbors(i){let r=Math.floor(i/3),c=i%3,res=[];[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([nr,nc])=>{if(nr>=0&&nr<3&&nc>=0&&nc<3)res.push(nr*3+nc)});return res}
+function draw(){document.getElementById('board').innerHTML='';document.getElementById('levelNum').textContent=level;document.getElementById('score').textContent=score;let f=figures[level-1];document.getElementById('figure').textContent=f.name;board.forEach((n,i)=>{let d=document.createElement('div');if(n===0){d.className='empty';}else{d.className='tile';d.textContent=n;d.style.backgroundImage=`url(${f.img})`;let pos=n-1;d.style.backgroundPosition=`${(pos%3)*50}% ${Math.floor(pos/3)*50}%`;d.onclick=()=>move(i);}document.getElementById('board').appendChild(d)});renderLevels();}
+function move(i){if(won) return; let e=board.indexOf(0); if(!neighbors(e).includes(i)) return; [board[e],board[i]]=[board[i],board[e]]; draw(); if(isSolved()) win();}
+function isSolved(){return board.join()==solved().join()}
+function win(){won=true; score+=10; localStorage.setItem('score',score); let f=figures[level-1]; document.getElementById('msg').innerHTML='🎉 You Won! +10 points<br>'+f.fact; if(unlocked<10 && level===unlocked){unlocked++; localStorage.setItem('unlocked',unlocked);} renderLevels();}
+function resetGame(){won=false;document.getElementById('msg').textContent='';shuffle();draw();}
+function renderLevels(){let box=document.getElementById('levels');box.innerHTML='';for(let i=1;i<=10;i++){let d=document.createElement('div');d.className='lvl'+(i<=unlocked?' open':'');d.textContent='Level '+i;if(i<=unlocked)d.onclick=()=>{level=i;localStorage.setItem('level',level);resetGame();};box.appendChild(d)}}
+resetGame();
+</script></body></html>
