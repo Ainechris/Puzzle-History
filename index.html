@@ -3,50 +3,1243 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rwandan Museum Puzzle</title>
+<title>X Rwandan Museum — Historical Puzzle</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.prod.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
-body{font-family:Arial,sans-serif;margin:0;background:#07150d;color:#e8f5ec;display:flex;justify-content:center}
-.wrap{max-width:900px;width:100%;padding:20px}.top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.panel{background:#0f2418;padding:12px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.35);border:1px solid #1d4d32}
-#board{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;aspect-ratio:1/1;background:#000;padding:4px;border-radius:12px;border:2px solid #1d4d32;margin-top:15px}
-.tile,.empty{border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;cursor:pointer;user-select:none}
-.tile{background-size:300% 300%;color:#fff;text-shadow:0 1px 2px #000;border:1px solid #1d4d32}.empty{background:#102017;cursor:default;border:1px dashed #2f7a50}
-button{padding:10px 14px;border:none;border-radius:8px;background:#145a32;color:#fff;cursor:pointer}button:hover{opacity:.95;background:#1f7a45}
-#levels{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}.lvl{padding:8px;border-radius:8px;background:#111;color:#bbb;text-align:center;border:1px solid #1d4d32}.open{background:#145a32;color:#fff;cursor:pointer}
-#msg{margin-top:12px;font-weight:bold;color:#7CFC98}
-@media(max-width:700px){#levels{grid-template-columns:repeat(2,1fr)}}
+/* ===== RESET & VARIABLES ===== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #080604;
+  --surface: #130e08;
+  --surface2: #1e1610;
+  --gold: #c9a227;
+  --gold-light: #f0c640;
+  --terra: #8b3a1a;
+  --terra2: #c04a20;
+  --cream: #f5edd8;
+  --text: #e0d0b0;
+  --muted: #7a6a4a;
+  --border: #2e2010;
+  --border2: #4a3420;
+  --success: #4caf50;
+}
+
+html, body { min-height: 100vh; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Crimson Text', Georgia, 'Times New Roman', serif;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    repeating-linear-gradient(45deg, transparent, transparent 28px, rgba(201,162,39,0.025) 28px, rgba(201,162,39,0.025) 29px),
+    repeating-linear-gradient(-45deg, transparent, transparent 28px, rgba(201,162,39,0.025) 28px, rgba(201,162,39,0.025) 29px);
+  pointer-events: none; z-index: 0;
+}
+
+#app { position: relative; z-index: 1; }
+
+/* ===== BUTTONS ===== */
+.btn {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s;
+  letter-spacing: 0.05em;
+  border: none;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--terra), var(--terra2));
+  color: var(--cream);
+  border: 1.5px solid var(--gold);
+  padding: 0.75rem 2rem;
+  text-transform: uppercase;
+}
+.btn-primary:hover { box-shadow: 0 4px 20px rgba(201,162,39,0.35); transform: translateY(-1px); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border2);
+  padding: 0.65rem 1.4rem;
+  font-family: 'Crimson Text', serif;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold), #a07b15);
+  color: #0a0800;
+  border: none;
+  padding: 0.75rem 2rem;
+  text-transform: uppercase;
+}
+.btn-gold:hover { box-shadow: 0 4px 20px rgba(201,162,39,0.4); transform: translateY(-1px); }
+
+/* ===== INTRO SCREEN ===== */
+.intro-screen {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.museum-emblem {
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  border: 2.5px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 2rem;
+  position: relative;
+  background: radial-gradient(circle, #1a1005 0%, #080604 100%);
+  flex-shrink: 0;
+}
+.museum-emblem::after {
+  content: '';
+  position: absolute; inset: 7px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,162,39,0.4);
+}
+.emblem-x {
+  font-family: 'Playfair Display', serif;
+  font-size: 3.5rem; font-weight: 900;
+  color: var(--gold); line-height: 1;
+}
+
+.intro-eyebrow {
+  font-size: 0.8rem; letter-spacing: 0.25em;
+  text-transform: uppercase; color: var(--gold);
+  margin-bottom: 0.6rem;
+}
+
+.intro-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.2rem, 7vw, 4rem);
+  font-weight: 900; color: var(--cream);
+  line-height: 1.05; margin-bottom: 0.6rem;
+}
+
+.intro-sub {
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  font-style: italic; color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+
+.intro-divider {
+  width: 60px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 0 auto 1.5rem;
+}
+
+.intro-desc {
+  max-width: 480px;
+  font-size: 1.1rem; line-height: 1.85;
+  color: var(--muted); margin-bottom: 2.5rem;
+}
+
+.intro-feature-list {
+  display: flex; gap: 2rem; flex-wrap: wrap;
+  justify-content: center; margin-bottom: 3rem;
+}
+.intro-feature {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.4rem;
+}
+.feat-icon { font-size: 1.5rem; }
+.feat-label { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ===== GALLERY SCREEN ===== */
+.gallery-screen {
+  max-width: 920px; margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.gallery-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem; padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.gallery-title-area { flex: 1; }
+
+.gallery-eyebrow {
+  font-size: 0.75rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 0.3rem;
+}
+.gallery-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  color: var(--cream); line-height: 1.1; margin-bottom: 0.3rem;
+}
+.gallery-caption { font-style: italic; color: var(--muted); font-size: 0.95rem; }
+
+.gallery-stats { text-align: right; }
+.progress-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.5rem; }
+.progress-track {
+  width: 160px; height: 5px;
+  background: var(--border2); margin-bottom: 0.4rem;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--terra), var(--gold));
+  transition: width 0.6s ease;
+}
+.progress-count { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 1.1rem; }
+
+.figures-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.figure-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.figure-card.is-unlocked { cursor: pointer; }
+.figure-card.is-unlocked:hover {
+  border-color: var(--gold);
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+}
+.figure-card.is-locked { cursor: not-allowed; }
+.figure-card.is-completed { border-color: rgba(201,162,39,0.5); }
+
+.card-img-wrap {
+  width: 100%; aspect-ratio: 1;
+  position: relative; overflow: hidden;
+}
+.card-img-wrap canvas { width: 100%; height: 100%; display: block; }
+
+.card-lock {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; backdrop-filter: blur(2px);
+}
+
+.card-check {
+  position: absolute; top: 7px; right: 7px;
+  background: var(--gold); color: #0a0800;
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: bold;
+}
+
+.card-num {
+  position: absolute; top: 7px; left: 7px;
+  background: rgba(0,0,0,0.75); color: var(--gold);
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 0.7rem; font-weight: 700;
+}
+
+.card-body {
+  padding: 0.65rem 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.card-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.82rem; color: var(--cream);
+  line-height: 1.3; margin-bottom: 0.2rem;
+}
+.card-dates { font-size: 0.72rem; color: var(--muted); }
+.card-role { font-size: 0.72rem; color: var(--gold); font-style: italic; margin-top: 0.1rem; }
+
+/* ===== PUZZLE SCREEN ===== */
+.puzzle-screen {
+  max-width: 680px; margin: 0 auto;
+  padding: 1.5rem 1rem 2.5rem;
+}
+
+.puzzle-topbar {
+  display: flex; align-items: center;
+  gap: 0.75rem; margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.puzzle-info { flex: 1; min-width: 0; }
+.puzzle-fig-name {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.2rem, 3.5vw, 1.7rem);
+  color: var(--cream); line-height: 1.15;
+}
+.puzzle-fig-dates { font-size: 0.85rem; color: var(--muted); font-style: italic; }
+.puzzle-fig-role { font-size: 0.85rem; color: var(--gold); margin-top: 0.1rem; }
+
+.puzzle-hud {
+  display: flex; gap: 0.75rem; flex-shrink: 0;
+}
+.hud-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.5rem 1rem; text-align: center;
+  min-width: 56px;
+}
+.hud-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; font-weight: 700; color: var(--gold);
+  line-height: 1;
+}
+.hud-lbl {
+  font-size: 0.62rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted); margin-top: 0.15rem;
+}
+
+.puzzle-main {
+  display: flex; gap: 1.5rem;
+  align-items: flex-start; flex-wrap: wrap;
+}
+.puzzle-board-col { flex: 1; min-width: 260px; }
+
+.board-wrap {
+  width: 100%; aspect-ratio: 1;
+  background: var(--border);
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 3px; padding: 3px;
+  border: 2px solid var(--border2);
+  user-select: none; touch-action: manipulation;
+}
+
+.tile {
+  aspect-ratio: 1;
+  position: relative;
+  cursor: pointer;
+  transition: box-shadow 0.12s, filter 0.12s;
+  overflow: hidden;
+  background-size: 300% 300%;
+  border: 1.5px solid transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+.tile:not(.tile-empty):not(.tile-won):hover {
+  filter: brightness(1.12);
+  z-index: 2;
+}
+.tile.tile-adjacent {
+  border-color: rgba(201,162,39,0.55);
+}
+.tile.tile-empty {
+  cursor: default;
+  background: var(--bg) !important;
+  background-image: none !important;
+  box-shadow: inset 0 0 18px rgba(0,0,0,0.6);
+  border: 1.5px dashed var(--border2) !important;
+}
+.tile.tile-won { cursor: default; }
+
+.tile-num {
+  position: absolute;
+  bottom: 3px; right: 5px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(0.85rem, 2.5vw, 1.2rem);
+  color: #fff;
+  text-shadow: 0 1px 5px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.45);
+  padding: 1px 4px 0;
+  line-height: 1.3;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.puzzle-side { width: 130px; flex-shrink: 0; }
+
+.side-label {
+  font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--muted);
+  margin-bottom: 0.5rem; text-align: center;
+}
+.preview-canvas-wrap {
+  border: 1px solid var(--border);
+  position: relative;
+  background: var(--surface);
+}
+.preview-canvas-wrap canvas { width: 100%; display: block; }
+
+.side-hint {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.6;
+  text-align: center;
+}
+.side-hint strong { color: var(--gold); display: block; margin-bottom: 0.3rem; }
+
+.puzzle-controls {
+  display: flex; gap: 0.75rem; margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+/* ===== WIN OVERLAY ===== */
+.win-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem; z-index: 100;
+  animation: fadeIn 0.4s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.win-card {
+  background: var(--surface);
+  border: 2px solid var(--gold);
+  max-width: 560px; width: 100%;
+  animation: slideUp 0.45s ease;
+  max-height: 92vh; overflow-y: auto;
+}
+
+.win-header {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  background: linear-gradient(180deg, rgba(201,162,39,0.08) 0%, transparent 100%);
+}
+.win-trophy { font-size: 2.5rem; margin-bottom: 0.3rem; }
+.win-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.9rem; color: var(--gold);
+  margin-bottom: 0.2rem;
+}
+.win-tagline { color: var(--muted); font-style: italic; }
+
+.win-score-row {
+  display: flex; justify-content: center; gap: 2rem;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.win-stat { text-align: center; }
+.win-stat-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem; font-weight: 900; color: var(--gold);
+  line-height: 1;
+}
+.win-stat-lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-top: 0.2rem; }
+
+.win-body { padding: 1.2rem 1.5rem; }
+
+.win-fig-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; color: var(--cream);
+  text-align: center; margin-bottom: 1rem;
+}
+.win-fig-role { font-size: 0.9rem; color: var(--gold); text-align: center; font-style: italic; margin-bottom: 1.2rem; }
+
+.win-block {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  background: rgba(0,0,0,0.25);
+  border-left: 3px solid var(--terra);
+}
+.win-block.fun { border-left-color: var(--gold); }
+
+.win-block-label {
+  font-size: 0.68rem; text-transform: uppercase;
+  letter-spacing: 0.15em; font-weight: 700;
+  color: var(--terra); margin-bottom: 0.45rem;
+}
+.win-block.fun .win-block-label { color: var(--gold); }
+
+.win-block-text {
+  font-size: 0.97rem; line-height: 1.75;
+  color: var(--text);
+}
+
+.win-unlock {
+  margin: 1rem 0 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(201,162,39,0.08);
+  border: 1px solid rgba(201,162,39,0.3);
+  text-align: center;
+  color: var(--gold); font-size: 0.95rem;
+}
+.win-unlock strong { display: block; font-size: 1rem; margin-top: 0.2rem; font-family: 'Playfair Display', serif; }
+
+.win-footer {
+  padding: 1rem 1.5rem 1.5rem;
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+}
+.win-footer .btn { flex: 1; min-width: 120px; }
+
+/* ===== CONGRATS SCREEN ===== */
+.congrats-screen {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh; padding: 2rem; text-align: center;
+}
+.congrats-trophy { font-size: 5rem; margin-bottom: 1rem; }
+.congrats-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  color: var(--gold); margin-bottom: 0.5rem;
+}
+.congrats-sub { color: var(--muted); font-size: 1.1rem; font-style: italic; margin-bottom: 2rem; }
+.congrats-total {
+  font-family: 'Playfair Display', serif;
+  font-size: 4rem; font-weight: 900; color: var(--gold);
+}
+.congrats-total-lbl { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2.5rem; }
+
+/* ===== SCROLL STYLES ===== */
+.win-card::-webkit-scrollbar { width: 4px; }
+.win-card::-webkit-scrollbar-track { background: var(--surface); }
+.win-card::-webkit-scrollbar-thumb { background: var(--border2); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 520px) {
+  .puzzle-main { flex-direction: column; }
+  .puzzle-side { width: 100%; display: flex; gap: 1rem; align-items: flex-start; }
+  .preview-canvas-wrap { width: 90px; flex-shrink: 0; }
+  .side-hint { flex: 1; }
+  .side-label { text-align: left; }
+  .figures-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+  .win-score-row { gap: 1.2rem; }
+  .win-stat-val { font-size: 2rem; }
+}
+
+@media (max-width: 380px) {
+  .figures-grid { grid-template-columns: repeat(2, 1fr); }
+  .win-body { padding: 1rem; }
+  .win-header, .win-footer { padding-left: 1rem; padding-right: 1rem; }
+}
 </style>
 </head>
-<body><div class='wrap'>
-<h1 style='color:#7CFC98'>Rwandan Museum Slider Puzzle</h1>
-<div class='top'>
-<div class='panel'>Level: <span id='levelNum'>1</span> | Score: <span id='score'>0</span></div>
-<div class='panel'><button onclick='resetGame()'>Try Again</button></div>
-</div>
-<div class='panel'><strong id='figure'></strong><div id='board'></div><div id='msg'></div></div>
-<h3 style='color:#7CFC98'>Levels</h3><div id='levels'></div>
-</div>
+<body>
+<div id="app">
+
+  <!-- ==================== INTRO SCREEN ==================== -->
+  <div v-if="screen==='intro'" class="intro-screen">
+    <div class="museum-emblem">
+      <span class="emblem-x">X</span>
+    </div>
+    <p class="intro-eyebrow">Musanze District · Muhoza Sector</p>
+    <h1 class="intro-title">X Rwandan Museum</h1>
+    <p class="intro-sub">Discover the Heroes of Our History</p>
+    <div class="intro-divider"></div>
+    <p class="intro-desc">
+      Reassemble portrait puzzles of Rwanda's greatest historical figures.
+      Each piece you place reveals a life that shaped this nation — and the story behind it.
+    </p>
+    <div class="intro-feature-list">
+      <div class="intro-feature"><span class="feat-icon">🧩</span><span class="feat-label">10 Puzzles</span></div>
+      <div class="intro-feature"><span class="feat-icon">📜</span><span class="feat-label">Real History</span></div>
+      <div class="intro-feature"><span class="feat-icon">🏆</span><span class="feat-label">Earn Points</span></div>
+      <div class="intro-feature"><span class="feat-icon">🔓</span><span class="feat-label">Unlock Figures</span></div>
+    </div>
+    <button class="btn btn-primary" @click="screen='gallery'">Begin Your Journey</button>
+  </div>
+
+  <!-- ==================== GALLERY SCREEN ==================== -->
+  <div v-else-if="screen==='gallery'" class="gallery-screen">
+    <div class="gallery-header">
+      <div class="gallery-title-area">
+        <p class="gallery-eyebrow">X Rwandan Museum</p>
+        <h2 class="gallery-title">Hall of Historical Figures</h2>
+        <p class="gallery-caption">Complete puzzles to unlock new portraits</p>
+      </div>
+      <div class="gallery-stats">
+        <p class="progress-label">Progress</p>
+        <div class="progress-track">
+          <div class="progress-fill" :style="{width: (completedSet.size/10*100)+'%'}"></div>
+        </div>
+        <p class="progress-count">{{ completedSet.size }}<span style="color:var(--muted);font-size:0.85rem"> / 10</span></p>
+      </div>
+    </div>
+
+    <div class="figures-grid">
+      <div v-for="(fig, i) in figures" :key="fig.id"
+           class="figure-card"
+           :class="{
+             'is-unlocked': i < unlockedCount,
+             'is-locked': i >= unlockedCount,
+             'is-completed': completedSet.has(i)
+           }"
+           @click="i < unlockedCount && startPuzzle(i)">
+        <div class="card-num">{{ i + 1 }}</div>
+        <div class="card-img-wrap">
+          <canvas :ref="el => { if(el) cardCanvases[i]=el }" width="200" height="200"></canvas>
+          <div v-if="i >= unlockedCount" class="card-lock">🔒</div>
+          <div v-if="completedSet.has(i)" class="card-check">✓</div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">{{ fig.name }}</div>
+          <div class="card-dates">{{ fig.dates }}</div>
+          <div class="card-role">{{ fig.role }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:2rem;">
+      <button class="btn btn-secondary" @click="screen='intro'">← Back to Welcome</button>
+    </div>
+  </div>
+
+  <!-- ==================== PUZZLE SCREEN ==================== -->
+  <div v-else-if="screen==='puzzle'" class="puzzle-screen">
+    <div class="puzzle-topbar">
+      <div class="puzzle-info">
+        <div class="puzzle-fig-name">{{ currentFigure.name }}</div>
+        <div class="puzzle-fig-dates">{{ currentFigure.dates }}</div>
+        <div class="puzzle-fig-role">{{ currentFigure.role }}</div>
+      </div>
+      <div class="puzzle-hud">
+        <div class="hud-box">
+          <div class="hud-val">{{ moves }}</div>
+          <div class="hud-lbl">Moves</div>
+        </div>
+        <div class="hud-box">
+          <div class="hud-val">{{ currentIdx+1 }}/10</div>
+          <div class="hud-lbl">Puzzle</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="puzzle-main">
+      <div class="puzzle-board-col">
+        <div class="board-wrap">
+          <div v-for="(tile, pos) in board" :key="'t'+pos"
+               class="tile"
+               :class="{
+                 'tile-empty': tile === 0,
+                 'tile-adjacent': tile !== 0 && isAdjacentToEmpty(pos),
+                 'tile-won': won
+               }"
+               :style="tile !== 0 ? getTileStyle(tile) : {}"
+               @click="clickTile(pos)"
+               @touchend.prevent="clickTile(pos)">
+            <span v-if="tile !== 0" class="tile-num">{{ tile }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="puzzle-side">
+        <p class="side-label">Target Image</p>
+        <div class="preview-canvas-wrap">
+          <canvas ref="previewCanvas" width="130" height="130"></canvas>
+        </div>
+        <div class="side-hint">
+          <strong>How to play</strong>
+          Click a numbered piece next to the empty space to slide it.
+          Arrange pieces 1→8 to complete the portrait!
+        </div>
+      </div>
+    </div>
+
+    <div class="puzzle-controls">
+      <button class="btn btn-secondary" @click="screen='gallery'">← Gallery</button>
+      <button class="btn btn-secondary" @click="tryAgain">🔄 Try Again</button>
+    </div>
+  </div>
+
+  <!-- ==================== WIN OVERLAY ==================== -->
+  <div v-if="won && screen==='puzzle'" class="win-overlay">
+    <div class="win-card">
+      <div class="win-header">
+        <div class="win-trophy">🎉</div>
+        <h2 class="win-title">Puzzle Solved!</h2>
+        <p class="win-tagline">You've uncovered a great Rwandan hero</p>
+      </div>
+
+      <div class="win-score-row">
+        <div class="win-stat">
+          <div class="win-stat-val">{{ score }}</div>
+          <div class="win-stat-lbl">Points</div>
+        </div>
+        <div class="win-stat">
+          <div class="win-stat-val">{{ moves }}</div>
+          <div class="win-stat-lbl">Moves</div>
+        </div>
+        <div class="win-stat">
+          <div class="win-stat-val">{{ completedSet.size }}</div>
+          <div class="win-stat-lbl">Completed</div>
+        </div>
+      </div>
+
+      <div class="win-body">
+        <div class="win-fig-name">{{ currentFigure.name }}</div>
+        <div class="win-fig-role">{{ currentFigure.role }} &bull; {{ currentFigure.dates }}</div>
+
+        <div class="win-block fun">
+          <div class="win-block-label">✨ Fun Fact</div>
+          <div class="win-block-text">{{ currentFigure.funFact }}</div>
+        </div>
+
+        <div class="win-block">
+          <div class="win-block-label">📚 Historical Information</div>
+          <div class="win-block-text">{{ currentFigure.info }}</div>
+        </div>
+
+        <div v-if="currentIdx + 1 < 10" class="win-unlock">
+          🔓 New figure unlocked!
+          <strong>{{ figures[currentIdx + 1].name }}</strong>
+        </div>
+        <div v-else class="win-unlock">
+          🏆 You've completed all 10 historical figure puzzles!
+        </div>
+      </div>
+
+      <div class="win-footer">
+        <button class="btn btn-secondary" @click="goToGallery">🖼 Gallery</button>
+        <button class="btn btn-secondary" @click="tryAgain">🔄 Try Again</button>
+        <button v-if="currentIdx + 1 < 10" class="btn btn-gold" @click="nextPuzzle">Next Puzzle →</button>
+        <button v-else class="btn btn-gold" @click="goToGallery">🏆 View Collection</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
 <script>
-const figures=[
-{name:'Kigeli IV Rwabugiri',img:'https://upload.wikimedia.org/wikipedia/commons/5/56/Kigeli_IV_Rwabugiri.jpg',fact:'Expanded Rwanda greatly.'},
-{name:'Mutara III Rudahigwa',img:'https://upload.wikimedia.org/wikipedia/commons/8/8f/Mutara_III.jpg',fact:'Supported modernization.'},
-{name:'Kigeli V Ndahindurwa',img:'https://upload.wikimedia.org/wikipedia/commons/0/02/Kigeli_V.jpg',fact:'Last king of Rwanda.'},
-{name:'Yuhi V Musinga',img:'https://upload.wikimedia.org/wikipedia/commons/1/1c/Yuhi_V.jpg',fact:'Ruled during colonial era.'},
-{name:'Ruganzu Ndori',img:'https://picsum.photos/seed/1/600',fact:'Known in oral history.'},
-{name:'Cyilima Rugwe',img:'https://picsum.photos/seed/2/600',fact:'Remembered as early king.'},
-{name:'Kigeri II',img:'https://picsum.photos/seed/3/600',fact:'Important dynastic ruler.'},
-{name:'Mibambwe III',img:'https://picsum.photos/seed/4/600',fact:'Historic monarch.'},
-{name:'Mutara II',img:'https://picsum.photos/seed/5/600',fact:'Led precolonial Rwanda.'},
-{name:'Gihanga',img:'https://picsum.photos/seed/6/600',fact:'Legendary founder figure.'}
+const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
+/* ===================================================
+   HISTORICAL FIGURES DATA
+=================================================== */
+const FIGURES = [
+  {
+    id:1, name:"King Kigeli IV Rwabugiri", dates:"c. 1840 – 1895",
+    role:"King of Rwanda",
+    colors:{ bg1:'#1a0500', bg2:'#3d0f00', skin:'#6b3620', accent:'#d4a017', hair:'#120300', border:'#6b1500' },
+    funFact:"Rwabugiri was known as 'He who challenges mountains' — a warrior king who rode into battle alongside his troops and never lost a major military campaign during his 30-year reign.",
+    info:"King Kigeli IV Rwabugiri (c. 1840–1895) was one of Rwanda's most powerful monarchs. He expanded the kingdom's territory to nearly its modern borders through military campaigns, reorganized the military and administrative systems, and created a highly efficient centralized state. His reign marked the peak of precolonial Rwandan power. Europeans first arrived in Rwanda near the very end of his reign in 1894, just one year before his death."
+  },
+  {
+    id:2, name:"King Mutara III Rudahigwa", dates:"1911 – 1959",
+    role:"King of Rwanda",
+    colors:{ bg1:'#00071a', bg2:'#001038', skin:'#7a4a30', accent:'#a0a8ff', hair:'#080810', border:'#0d2d7a' },
+    funFact:"Mutara III was the first Rwandan king to convert to Catholicism and was baptized in 1943, taking the Christian name Charles Léon Pierre — a decision that reshaped Rwanda's relationship with the Church.",
+    info:"King Mutara III Rudahigwa (1911–1959) made landmark decisions during his reign, including abolishing ubuhake (a form of cattle clientship) in 1954, bringing new freedoms to many Rwandans. He sought independence from Belgian colonial rule and worked to modernize Rwanda while preserving its cultural identity. He consecrated Rwanda to Christ the King in 1946. He died suddenly under mysterious circumstances in 1959, just months before Rwanda's social revolution began."
+  },
+  {
+    id:3, name:"Alexis Kagame", dates:"1912 – 1981",
+    role:"Philosopher, Historian & Poet",
+    colors:{ bg1:'#08001a', bg2:'#180048', skin:'#5a3520', accent:'#d890ff', hair:'#0a0508', border:'#480090' },
+    funFact:"Alexis Kagame composed epic poetry in the traditional Rwandan oral style while simultaneously earning a doctorate in philosophy from the Gregorian University in Rome — bridging two worlds of knowledge.",
+    info:"Father Alexis Kagame (1912–1981) was a Rwandan Catholic priest, philosopher, poet, linguist, and historian — widely considered the greatest Rwandan intellectual of the 20th century. He documented Rwanda's rich oral traditions and royal court poetry, preserving centuries of Rwandan culture in writing before it could be lost. His philosophical work 'La Philosophie Bantu-Rwandaise de l'Être' helped establish African philosophy as a serious academic field recognized worldwide."
+  },
+  {
+    id:4, name:"King Yuhi V Musinga", dates:"1883 – 1944",
+    role:"King of Rwanda",
+    colors:{ bg1:'#001a00', bg2:'#002e00', skin:'#6a3c1c', accent:'#70e870', hair:'#040804', border:'#0a5000' },
+    funFact:"Musinga stubbornly refused to convert to Christianity for 30 years, despite constant Belgian and missionary pressure — believing, correctly, that conversion would mean surrendering his royal authority.",
+    info:"King Yuhi V Musinga (1883–1944) ruled Rwanda during the difficult period of German and then Belgian colonization. For over 30 years he resisted pressure to convert to Christianity and opposed Belgian attempts to diminish his authority. He used clever diplomacy to maintain Rwandan cultural traditions and sought alliances with Germany to counterbalance Belgian power. In 1931, Belgian authorities forced him into exile in the Congo, where he eventually died. He is remembered as a symbol of resistance to colonialism."
+  },
+  {
+    id:5, name:"Queen Mother Kanjogera", dates:"c. 1858 – 1925",
+    role:"Queen Mother & Regent of Rwanda",
+    colors:{ bg1:'#18001a', bg2:'#360040', skin:'#7a4a38', accent:'#ff85e8', hair:'#1a0018', border:'#6b0070' },
+    funFact:"Kanjogera is said to have hidden behind a curtain and whispered commands to her young son during royal court meetings — effectively ruling Rwanda for years from the shadows.",
+    info:"Queen Mother Kanjogera (c. 1858–1925) was one of the most powerful women in Rwandan history. After the death of King Kigeli IV Rwabugiri, she orchestrated a succession crisis and placed her own son, Musinga, on the throne. As queen mother and regent, she wielded enormous political influence during a critical period when Rwanda was navigating the arrival of European colonial powers. She is remembered as a brilliant political strategist and a symbol of female political power in Rwandan history."
+  },
+  {
+    id:6, name:"Fred Rwigema", dates:"1957 – 1990",
+    role:"General & Liberation Hero",
+    colors:{ bg1:'#040e00', bg2:'#0a2000', skin:'#5a3818', accent:'#90e000', hair:'#060800', border:'#206600' },
+    funFact:"Fred Rwigema rose to become Uganda's Deputy Commander of the Armed Forces and Deputy Minister of Defence — before quietly building the force that would liberate his homeland Rwanda.",
+    info:"Major General Fred Rwigema (1957–1990) was a Rwandan patriot and military hero. Born in exile in Uganda, he rose to become one of Uganda's highest-ranking military commanders while secretly planning the liberation of Rwanda. He co-founded the Rwandan Patriotic Front (RPF) and led its historic invasion of Rwanda on October 1, 1990. He was killed in battle on October 2, 1990 — just one day after the liberation war began — and is celebrated as Rwanda's greatest military hero and a martyr for national unity."
+  },
+  {
+    id:7, name:"Grégoire Kayibanda", dates:"1924 – 1976",
+    role:"First President of Rwanda",
+    colors:{ bg1:'#180800', bg2:'#341200', skin:'#6b3a1a', accent:'#ff8c00', hair:'#0c0400', border:'#904000' },
+    funFact:"Kayibanda was a teacher and journalist who founded Rwanda's first political newspaper, Kinyamateka, and used it to spread his political message before entering politics — the pen leading to the presidency.",
+    info:"Grégoire Kayibanda (1924–1976) was the first President of the Republic of Rwanda, serving from independence in 1962 until 1973. A former teacher, editor, and political organizer, he led Rwanda's social revolution of 1959 and independence movement. He founded the MDR-Parmehutu party and negotiated Rwanda's independence from Belgium. He served as president for 11 years before being overthrown in a coup in 1973. He died under house arrest in 1976 and remains a controversial but historically pivotal figure."
+  },
+  {
+    id:8, name:"Agathe Uwilingiyimana", dates:"1953 – 1994",
+    role:"First Female Prime Minister of Rwanda",
+    colors:{ bg1:'#001618', bg2:'#002830', skin:'#7a4830', accent:'#00dce8', hair:'#080b0c', border:'#006070' },
+    funFact:"Known as 'Madame Agathe', she was a mathematics teacher before entering politics — and she brought the same precision, logic, and determination to government that she had brought to her classroom.",
+    info:"Agathe Uwilingiyimana (1953–1994) was a Rwandan politician who served as Rwanda's first female Prime Minister from 1993 to 1994. A former mathematics teacher, she was known for her courage, moderate politics, and strong commitment to democracy and national reconciliation. She was tragically murdered at the start of the 1994 genocide while attempting to make a radio broadcast to calm the nation. She is remembered internationally as a symbol of courage, women's leadership, and the cost of peace in Africa."
+  },
+  {
+    id:9, name:"King Cyilima II Rujugira", dates:"c. 1700 – c. 1765",
+    role:"King & Military Strategist",
+    colors:{ bg1:'#00081a', bg2:'#000e2e', skin:'#5a3418', accent:'#3888ff', hair:'#040508', border:'#003080' },
+    funFact:"Rujugira built a chain of military fortresses along Rwanda's northern and western borders — a defensive network so effective it kept the powerful Bunyoro kingdom at bay for generations after his death.",
+    info:"King Cyilima II Rujugira (c. 1700 – c. 1765) is celebrated as one of Rwanda's greatest military strategists and administrators. He significantly reorganized Rwanda's army into specialized regiments and built a network of border fortifications. He successfully repelled multiple invasions from neighboring kingdoms, particularly Bunyoro, and greatly expanded Rwanda's territory and influence. His military and administrative reforms became the foundation for the powerful and stable precolonial Rwandan state that would last for over a century after his death."
+  },
+  {
+    id:10, name:"Paul Kagame", dates:"1957 – present",
+    role:"President of Rwanda",
+    colors:{ bg1:'#000510', bg2:'#000d22', skin:'#5c3820', accent:'#2060d0', hair:'#050508', border:'#0a3080' },
+    funFact:"Paul Kagame completed a marathon in under 3 hours and 40 minutes at age 60, and regularly cycles long distances — embodying the discipline and determination that he has brought to rebuilding Rwanda.",
+    info:"Paul Kagame (born 1957) is the President of Rwanda, in office since 2000. Growing up as a Tutsi exile in Uganda, he trained as a military officer and co-founded the Rwandan Patriotic Front. His forces ended the 1994 genocide in July of that year. Under his leadership, Rwanda has achieved remarkable economic transformation, with consistent growth making it one of Africa's fastest-developing nations. Rwanda now has the world's highest proportion of women in parliament, and Kigali is consistently rated among Africa's cleanest and safest cities."
+  }
 ];
-let level=+localStorage.getItem('level')||1; let unlocked=+localStorage.getItem('unlocked')||1; let score=+localStorage.getItem('score')||0; let board=[]; let won=false;
-function solved(){return [1,2,3,4,5,6,7,8,0]}
-function shuffle(){board=solved().slice(); for(let i=0;i<200;i++){let e=board.indexOf(0);let moves=neighbors(e); let m=moves[Math.floor(Math.random()*moves.length)]; [board[e],board[m]]=[board[m],board[e]];} if(isSolved()) shuffle();}
-function neighbors(i){let r=Math.floor(i/3),c=i%3,res=[];[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([nr,nc])=>{if(nr>=0&&nr<3&&nc>=0&&nc<3)res.push(nr*3+nc)});return res}
-function draw(){document.getElementById('board').innerHTML='';document.getElementById('levelNum').textContent=level;document.getElementById('score').textContent=score;let f=figures[level-1];document.getElementById('figure').textContent=f.name;board.forEach((n,i)=>{let d=document.createElement('div');if(n===0){d.className='empty';}else{d.className='tile';d.textContent=n;d.style.backgroundImage=`url(${f.img})`;let pos=n-1;d.style.backgroundPosition=`${(pos%3)*50}% ${Math.floor(pos/3)*50}%`;d.onclick=()=>move(i);}document.getElementById('board').appendChild(d)});renderLevels();}
-function move(i){if(won) return; let e=board.indexOf(0); if(!neighbors(e).includes(i)) return; [board[e],board[i]]=[board[i],board[e]]; draw(); if(isSolved()) win();}
-function isSolved(){return board.join()==solved().join()}
-function win(){won=true; score+=10; localStorage.setItem('score',score); let f=figures[level-1]; document.getElementById('msg').innerHTML='🎉 You Won! +10 points<br>'+f.fact; if(unlocked<10 && level===unlocked){unlocked++; localStorage.setItem('unlocked',unlocked);} renderLevels();}
-function resetGame(){won=false;document.getElementById('msg').textContent='';shuffle();draw();}
-function renderLevels(){let box=document.getElementById('levels');box.innerHTML='';for(let i=1;i<=10;i++){let d=document.createElement('div');d.className='lvl'+(i<=unlocked?' open':'');d.textContent='Level '+i;if(i<=unlocked)d.onclick=()=>{level=i;localStorage.setItem('level',level);resetGame();};box.appendChild(d)}}
-resetGame();
-</script></body></html>
+
+/* ===================================================
+   VUE APPLICATION
+=================================================== */
+createApp({
+  setup() {
+    // ---- State ----
+    const screen       = ref('intro');
+    const currentIdx   = ref(0);
+    const board        = ref([1,2,3,4,5,6,7,8,0]);
+    const moves        = ref(0);
+    const won          = ref(false);
+    const score        = ref(0);
+    const unlockedCount = ref(1);
+    const completedSet = ref(new Set());
+    const totalScore   = ref(0);
+
+    // Canvas refs
+    const cardCanvases = {};
+    const previewCanvas = ref(null);
+    const figureDataURLs = {};  // idx -> dataURL (300x300 portrait)
+
+    // ---- Computed ----
+    const figures = FIGURES;
+    const currentFigure = computed(() => FIGURES[currentIdx.value]);
+
+    /* ================================================
+       CANVAS PORTRAIT DRAWING
+    ================================================ */
+    function drawDiamond(ctx, sz) {
+      ctx.beginPath();
+      ctx.moveTo(0, -sz); ctx.lineTo(sz, 0);
+      ctx.lineTo(0, sz);  ctx.lineTo(-sz, 0);
+      ctx.closePath(); ctx.fill();
+    }
+
+    function drawStar(ctx, sz) {
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const outer = (i * 4 * Math.PI / 5) - Math.PI / 2;
+        const inner = ((i * 4 + 2) * Math.PI / 5) - Math.PI / 2;
+        const ox = sz * Math.cos(outer), oy = sz * Math.sin(outer);
+        const ix = sz * 0.42 * Math.cos(inner), iy = sz * 0.42 * Math.sin(inner);
+        i === 0 ? ctx.moveTo(ox, oy) : ctx.lineTo(ox, oy);
+        ctx.lineTo(ix, iy);
+      }
+      ctx.closePath(); ctx.fill();
+    }
+
+    function drawPortrait(canvas, figIdx) {
+      const fig = FIGURES[figIdx];
+      const W = canvas.width, H = canvas.height;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
+
+      // 1. Background gradient
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, fig.colors.bg1);
+      bg.addColorStop(1, fig.colors.bg2);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // 2. Border bar
+      const BW = Math.max(10, Math.floor(W * 0.042));
+      ctx.fillStyle = fig.colors.border;
+      ctx.fillRect(0, 0, W, BW);
+      ctx.fillRect(0, H - BW, W, BW);
+      ctx.fillRect(0, 0, BW, H);
+      ctx.fillRect(W - BW, 0, BW, H);
+
+      // 3. Diamond pattern on border
+      ctx.fillStyle = fig.colors.accent;
+      const step = Math.floor(W / 14);
+      for (let x = step; x < W - BW; x += step) {
+        ctx.save(); ctx.translate(x, BW / 2); drawDiamond(ctx, 4); ctx.restore();
+        ctx.save(); ctx.translate(x, H - BW / 2); drawDiamond(ctx, 4); ctx.restore();
+      }
+      for (let y = step; y < H - BW; y += step) {
+        ctx.save(); ctx.translate(BW / 2, y); drawDiamond(ctx, 4); ctx.restore();
+        ctx.save(); ctx.translate(W - BW / 2, y); drawDiamond(ctx, 4); ctx.restore();
+      }
+
+      // 4. Inner decorative frame
+      const PAD = BW + Math.floor(W * 0.04);
+      ctx.strokeStyle = fig.colors.accent;
+      ctx.globalAlpha = 0.3;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(PAD, PAD, W - PAD * 2, H - PAD * 2);
+      ctx.globalAlpha = 1.0;
+
+      // 5. Portrait oval background
+      const cx = W / 2, cy = H * 0.42;
+      const rx = W * 0.36, ry = H * 0.43;
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fillStyle = fig.colors.border;
+      ctx.fill();
+      ctx.strokeStyle = fig.colors.accent;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      // 6. Clip to oval for face drawing
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx * 0.98, ry * 0.98, 0, 0, Math.PI * 2);
+      ctx.clip();
+
+      // Head
+      const hRx = rx * 0.55, hRy = ry * 0.6;
+      const headY = cy + ry * 0.04;
+      ctx.beginPath();
+      ctx.ellipse(cx, headY, hRx, hRy, 0, 0, Math.PI * 2);
+      ctx.fillStyle = fig.colors.skin;
+      ctx.fill();
+
+      // Hair / head top
+      ctx.beginPath();
+      ctx.ellipse(cx, headY - hRy * 0.48, hRx * 1.05, hRy * 0.58, 0, Math.PI, Math.PI * 2);
+      ctx.fillStyle = fig.colors.hair;
+      ctx.fill();
+
+      // Eyes
+      const eyeY = headY - hRy * 0.06;
+      const eyeXoff = hRx * 0.3;
+      const eyeRx = hRx * 0.095, eyeRy = hRy * 0.075;
+      ctx.fillStyle = '#0a0500';
+      ctx.beginPath(); ctx.ellipse(cx - eyeXoff, eyeY, eyeRx, eyeRy, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx + eyeXoff, eyeY, eyeRx, eyeRy, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.beginPath(); ctx.ellipse(cx - eyeXoff, eyeY, eyeRx * 0.55, eyeRy * 0.55, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cx + eyeXoff, eyeY, eyeRx * 0.55, eyeRy * 0.55, 0, 0, Math.PI*2); ctx.fill();
+
+      // Nose
+      ctx.strokeStyle = fig.colors.hair;
+      ctx.lineWidth = Math.max(1.5, W * 0.006);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx - hRx * 0.04, eyeY + hRy * 0.1);
+      ctx.lineTo(cx, eyeY + hRy * 0.2);
+      ctx.lineTo(cx + hRx * 0.04, eyeY + hRy * 0.1);
+      ctx.stroke();
+
+      // Mouth
+      ctx.beginPath();
+      ctx.arc(cx, eyeY + hRy * 0.28, hRx * 0.18, 0.1 * Math.PI, 0.9 * Math.PI);
+      ctx.stroke();
+
+      // Shoulders/garment
+      ctx.beginPath();
+      ctx.moveTo(cx - hRx * 1.3, cy + ry);
+      ctx.quadraticCurveTo(cx - hRx * 0.85, cy + ry * 0.25, cx - hRx * 0.35, headY + hRy * 0.7);
+      ctx.lineTo(cx + hRx * 0.35, headY + hRy * 0.7);
+      ctx.quadraticCurveTo(cx + hRx * 0.85, cy + ry * 0.25, cx + hRx * 1.3, cy + ry);
+      ctx.closePath();
+      ctx.fillStyle = fig.colors.border;
+      ctx.fill();
+      ctx.strokeStyle = fig.colors.accent;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.5;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      ctx.restore(); // end clip
+
+      // 7. Figure-specific accent decoration (top area)
+      ctx.fillStyle = fig.colors.accent;
+      ctx.globalAlpha = 0.7;
+      const decorY = BW + Math.floor(H * 0.04);
+      switch (figIdx % 5) {
+        case 0: // Three stars
+          for (let i=0;i<3;i++){ctx.save();ctx.translate(cx-20+i*20,decorY+8);drawStar(ctx,6);ctx.restore();}
+          break;
+        case 1: // Row of circles
+          for (let i=0;i<5;i++){ctx.beginPath();ctx.arc(cx-32+i*16,decorY+8,4,0,Math.PI*2);ctx.fill();}
+          break;
+        case 2: // Diamond row
+          for (let i=0;i<4;i++){ctx.save();ctx.translate(cx-24+i*16,decorY+8);drawDiamond(ctx,6);ctx.restore();}
+          break;
+        case 3: // Crown-like triangles
+          for (let i=0;i<3;i++){
+            ctx.beginPath();
+            ctx.moveTo(cx-20+i*20,decorY+2);ctx.lineTo(cx-12+i*20,decorY+14);ctx.lineTo(cx-28+i*20,decorY+14);
+            ctx.closePath();ctx.fill();
+          }
+          break;
+        case 4: // Horizontal lines
+          ctx.fillRect(cx-30,decorY+5,60,2);
+          ctx.globalAlpha=0.35;
+          ctx.fillRect(cx-22,decorY+10,44,1);
+          break;
+      }
+      ctx.globalAlpha = 1.0;
+
+      // 8. Name plaque
+      const plaqueH = Math.floor(H * 0.14);
+      const plaqueY = H - BW - plaqueH - 4;
+      const plaqueX = BW + 4;
+      const plaqueW = W - BW * 2 - 8;
+      ctx.fillStyle = fig.colors.border;
+      ctx.fillRect(plaqueX, plaqueY, plaqueW, plaqueH);
+      ctx.strokeStyle = fig.colors.accent;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(plaqueX, plaqueY, plaqueW, plaqueH);
+
+      // Name text
+      ctx.fillStyle = fig.colors.accent;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const fontSize = Math.max(8, Math.floor(W / 18));
+      ctx.font = `bold ${fontSize}px 'Playfair Display', Georgia, serif`;
+      const nameParts = fig.name.split(' ');
+      const line1 = nameParts.slice(0, Math.ceil(nameParts.length / 2)).join(' ');
+      const line2 = nameParts.slice(Math.ceil(nameParts.length / 2)).join(' ');
+      if (nameParts.length > 2) {
+        ctx.fillText(line1, cx, plaqueY + plaqueH * 0.36);
+        ctx.fillText(line2, cx, plaqueY + plaqueH * 0.72);
+      } else {
+        ctx.fillText(fig.name, cx, plaqueY + plaqueH * 0.5);
+      }
+    }
+
+    function generateAllImages() {
+      FIGURES.forEach((_, idx) => {
+        const oc = document.createElement('canvas');
+        oc.width = 300; oc.height = 300;
+        drawPortrait(oc, idx);
+        figureDataURLs[idx] = oc.toDataURL();
+      });
+    }
+
+    function renderCardCanvases() {
+      nextTick(() => {
+        FIGURES.forEach((_, idx) => {
+          const c = cardCanvases[idx];
+          if (c) { c.width = 200; c.height = 200; drawPortrait(c, idx); }
+        });
+      });
+    }
+
+    function renderPreview() {
+      nextTick(() => {
+        if (!previewCanvas.value) return;
+        const url = figureDataURLs[currentIdx.value];
+        if (!url) return;
+        const ctx = previewCanvas.value.getContext('2d');
+        const imgEl = new Image();
+        imgEl.onload = () => {
+          ctx.clearRect(0, 0, 130, 130);
+          ctx.drawImage(imgEl, 0, 0, 130, 130);
+          // Draw grid lines over the preview
+          ctx.strokeStyle = 'rgba(201,162,39,0.6)';
+          ctx.lineWidth = 1;
+          for (let i = 1; i < 3; i++) {
+            const p = i * (130 / 3);
+            ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, 130); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(130, p); ctx.stroke();
+          }
+          // Number each cell
+          ctx.font = 'bold 10px Playfair Display, Georgia, serif';
+          ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+          ctx.fillStyle = 'rgba(255,255,255,0.85)';
+          for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+              const n = r * 3 + c + 1;
+              if (n <= 8) {
+                const px = (c + 1) * (130 / 3) - 2;
+                const py = (r + 1) * (130 / 3) - 2;
+                ctx.fillText(n, px, py);
+              }
+            }
+          }
+        };
+        imgEl.src = url;
+      });
+    }
+
+    /* ================================================
+       PUZZLE LOGIC
+    ================================================ */
+    function isSolvable(arr) {
+      const flat = arr.filter(x => x !== 0);
+      let inversions = 0;
+      for (let i = 0; i < flat.length - 1; i++)
+        for (let j = i + 1; j < flat.length; j++)
+          if (flat[i] > flat[j]) inversions++;
+      return inversions % 2 === 0;
+    }
+
+    function shuffleBoard() {
+      let arr = [1,2,3,4,5,6,7,8,0];
+      // Fisher-Yates shuffle
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      // Ensure not already solved
+      while (arr.join(',') === '1,2,3,4,5,6,7,8,0') {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+      // Fix solvability: if odd inversions, swap first two non-empty tiles
+      if (!isSolvable(arr)) {
+        const i1 = arr.findIndex(x => x !== 0);
+        let i2 = i1 + 1;
+        while (i2 < arr.length && arr[i2] === 0) i2++;
+        [arr[i1], arr[i2]] = [arr[i2], arr[i1]];
+      }
+      return arr;
+    }
+
+    function isAdjacentToEmpty(pos) {
+      const emptyPos = board.value.indexOf(0);
+      const r = Math.floor(pos / 3), c = pos % 3;
+      const er = Math.floor(emptyPos / 3), ec = emptyPos % 3;
+      return Math.abs(r - er) + Math.abs(c - ec) === 1;
+    }
+
+    function clickTile(pos) {
+      if (won.value) return;                      // REQ 4.4: no moves after winning
+      const tile = board.value[pos];
+      if (tile === 0) return;                     // REQ 3.3: clicking empty does nothing
+      if (!isAdjacentToEmpty(pos)) return;        // REQ 3.2: non-adjacent does nothing
+
+      const emptyPos = board.value.indexOf(0);
+      const newBoard = [...board.value];
+      newBoard[emptyPos] = newBoard[pos];          // REQ 3.4: swap with empty
+      newBoard[pos] = 0;
+      board.value = newBoard;
+      moves.value++;
+
+      checkWin();
+    }
+
+    function checkWin() {                         // REQ 4.1 & 4.3
+      const target = [1,2,3,4,5,6,7,8,0];
+      if (!board.value.every((v, i) => v === target[i])) return;
+
+      won.value = true;
+      score.value = Math.max(100, 1000 - moves.value * 10);  // REQ 5.1
+      totalScore.value += score.value;
+
+      // REQ 6.2: unlock next figure
+      completedSet.value = new Set([...completedSet.value, currentIdx.value]);
+      const needed = currentIdx.value + 2;
+      if (needed > unlockedCount.value) {
+        unlockedCount.value = Math.min(10, needed);
+      }
+      saveProgress();
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem('rwm_unlocked', String(unlockedCount.value));
+        localStorage.setItem('rwm_completed', JSON.stringify([...completedSet.value]));
+        localStorage.setItem('rwm_total_score', String(totalScore.value));
+      } catch(e) {}
+    }
+
+    function loadProgress() {                     // REQ 6.3 & 8.2: localStorage persistence
+      try {
+        const u = localStorage.getItem('rwm_unlocked');
+        if (u) unlockedCount.value = Math.max(1, Math.min(10, parseInt(u)));
+        const c = localStorage.getItem('rwm_completed');
+        if (c) completedSet.value = new Set(JSON.parse(c));
+        const s = localStorage.getItem('rwm_total_score');
+        if (s) totalScore.value = parseInt(s) || 0;
+      } catch(e) {}
+    }
+
+    function startPuzzle(idx) {
+      currentIdx.value = idx;
+      board.value = shuffleBoard();               // REQ 2.1, 2.2, 2.3, 2.4
+      moves.value = 0;
+      won.value = false;
+      score.value = 0;
+      screen.value = 'puzzle';
+      renderPreview();
+    }
+
+    function tryAgain() {                         // REQ 2.3, 7.3
+      board.value = shuffleBoard();
+      moves.value = 0;
+      won.value = false;
+    }
+
+    function goToGallery() {
+      won.value = false;
+      screen.value = 'gallery';
+    }
+
+    function nextPuzzle() {
+      if (currentIdx.value + 1 < 10) startPuzzle(currentIdx.value + 1);
+    }
+
+    /* ================================================
+       TILE STYLING — background-position trick
+    ================================================ */
+    function getTileStyle(tileValue) {            // REQ 4.2: shows correct image region
+      const url = figureDataURLs[currentIdx.value];
+      if (!url) return { background: '#1a1209' };
+
+      // tileValue 1–8 is the piece's "correct slot" (1-indexed)
+      // Correct slot index = tileValue - 1
+      const solvedPos = tileValue - 1;
+      const row = Math.floor(solvedPos / 3);      // 0,1,2
+      const col = solvedPos % 3;                  // 0,1,2
+
+      // backgroundSize: 300% 300% → each tile shows 1/3 of the image
+      // backgroundPosition: col*50% col*50% → maps to the correct 1/9 region
+      return {
+        backgroundImage: `url(${url})`,
+        backgroundSize: '300% 300%',
+        backgroundPosition: `${col * 50}% ${row * 50}%`,
+      };
+    }
+
+    /* ================================================
+       WATCHERS & LIFECYCLE
+    ================================================ */
+    watch(screen, newScreen => {
+      if (newScreen === 'gallery') renderCardCanvases();
+    });
+
+    onMounted(() => {
+      loadProgress();
+      generateAllImages();
+    });
+
+    return {
+      // State
+      screen, figures, currentIdx, board, moves, won, score, totalScore,
+      unlockedCount, completedSet, cardCanvases, previewCanvas,
+      // Computed
+      currentFigure,
+      // Methods
+      startPuzzle, tryAgain, goToGallery, nextPuzzle,
+      clickTile, isAdjacentToEmpty, getTileStyle,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
